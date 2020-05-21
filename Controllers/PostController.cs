@@ -30,8 +30,15 @@ namespace BlogPostWebApi.Controllers
             int currentPage = page <= 0 ? 1 : page;
             int offset = (currentPage - 1) * MAX_COUNT_PER_PAGE;
             string baseUrl = GetRequestedUrl();
-            IList<Post> result = await _context.Posts.Skip(offset).Take(MAX_COUNT_PER_PAGE).ToListAsync();
-            IList<PostWrapper> data = result.Select(post => new PostWrapper(post, $"{baseUrl}/{post.Id}")).ToList();
+            string httpString = HttpContext.Request.IsHttps ? "https://" : "http://";
+            IList<Post> result = await _context.Posts
+                                        .Include(p => p.Comments)
+                                        .Skip(offset).Take(MAX_COUNT_PER_PAGE)
+                                        .ToListAsync();
+            IList<PostWrapper> data = result.Select(post => 
+                                        new PostWrapper(post,
+                                            $"{httpString}{HttpContext.Request.Host}/posts/{post.Id}"))
+                                        .ToList();
             int totalCount = await _context.Posts.CountAsync();
             int pageCount = totalCount / MAX_COUNT_PER_PAGE + (totalCount % MAX_COUNT_PER_PAGE != 0 ? 1 : 0);
             var pagination = new
@@ -52,7 +59,7 @@ namespace BlogPostWebApi.Controllers
         [HttpGet("posts/{id}")]
         public async Task<IActionResult> GetPostById(int id)
         {
-            var post = await _context.Posts.FindAsync(id);
+            var post = await _context.Posts.Include(p => p.Comments).FirstAsync(p => p.Id == id);
 
             if (post == null)
             {
