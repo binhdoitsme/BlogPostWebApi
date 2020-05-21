@@ -30,6 +30,12 @@ namespace BlogPostWebApi
             services.AddControllers();
             services.AddDbContext<IWSTrainingContext>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            services.AddCors(options =>
+            {
+                options.AddPolicy("SameSite", options => {
+                    options.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+                });
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -41,6 +47,8 @@ namespace BlogPostWebApi
             }
 
             app.UseHttpsRedirection();
+
+            app.UseCors("SameSite");
 
             app.UseRouting();
 
