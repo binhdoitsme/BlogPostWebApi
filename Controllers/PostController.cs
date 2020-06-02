@@ -35,7 +35,7 @@ namespace BlogPostWebApi.Controllers
                                         .Include(p => p.Comments)
                                         .Skip(offset).Take(MAX_COUNT_PER_PAGE)
                                         .ToListAsync();
-            IList<PostWrapper> data = result.Select(post => 
+            IList<PostWrapper> data = result.Select(post =>
                                         new PostWrapper(post,
                                             $"{httpString}{HttpContext.Request.Host}/posts/{post.Id}"))
                                         .ToList();
@@ -59,14 +59,21 @@ namespace BlogPostWebApi.Controllers
         [HttpGet("posts/{id}")]
         public async Task<IActionResult> GetPostById(int id)
         {
-            var post = await _context.Posts.Include(p => p.Comments).FirstAsync(p => p.Id == id);
+            try
+            {
+                var post = await _context.Posts.Include(p => p.Comments).FirstAsync(p => p.Id == id);
+                if (post == null)
+                {
+                    return NotFound();
+                }
 
-            if (post == null)
+                return Ok(new PostWrapper(post, GetRequestedUrl()));
+            }
+            catch
             {
                 return NotFound();
             }
 
-            return Ok(new PostWrapper(post, GetRequestedUrl()));
         }
 
         // PUT: api/Post/5
